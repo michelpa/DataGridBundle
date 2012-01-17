@@ -35,6 +35,11 @@ JqGrid is included in this bundle but you have to enable it in your template:
 %}
 <script type="text/javascript" src="{{ asset_url }}"></script>
 {% endjavascripts %}
+
+{% stylesheets
+    '@SorienDataGridBundle/Resources/public/css/ui.jqgrid.css'
+%}
+<link rel="stylesheet" href="{{ asset_url }}" />
 ```
 
 You can change the language in the first include according to your configuration.
