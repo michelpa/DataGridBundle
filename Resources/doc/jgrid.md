@@ -25,21 +25,28 @@ It can be done by including this in your main template:
 
 ### Step 2: JqGrid
 
+Publish assets:
+``` shell
+./app/console assets:install --symlink web
+```
+
+
 JqGrid is included in this bundle but you have to enable it in your template:
 
 ``` php
 {% javascripts
     ...
-    '@SorienDataGridBundle/Resources/public/js/jqgrid/js/i18n/grid.locale-fr.js'
-    '@SorienDataGridBundle/Resources/public/js/jqgrid/js/jquery.jqGrid.min.js'
+    'bundles/soriendatagrid/js/jqgrid/js/i18n/grid.locale-fr.js'
+    'bundles/soriendatagrid/js/jqgrid/js/jquery.jqGrid.min.js'
 %}
 <script type="text/javascript" src="{{ asset_url }}"></script>
 {% endjavascripts %}
 
 {% stylesheets
-    '@SorienDataGridBundle/Resources/public/css/ui.jqgrid.css'
+    'bundles/soriendatagrid/css/ui.jqgrid.css'
 %}
 <link rel="stylesheet" href="{{ asset_url }}" />
+{% endstylesheets %}
 ```
 
 You can change the language in the first include according to your configuration.
