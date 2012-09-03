@@ -9,7 +9,8 @@
         {% endif %}
         </div>
         <div class="grid_body">
-        <table>
+        <table class="table table-bordered table-striped table-hover table-condensed" id="table_{{ grid.hash }}">
+        <thead>
         {% if grid.isTitleSectionVisible %}
             {{ grid_titles(grid) }}
         {% endif %}
@@ -17,8 +18,10 @@
         {% if grid.isFilterSectionVisible %}
             {{ grid_filters(grid) }}
         {% endif %}
-
+        </thead>
+        <tbody>
         {{ grid_rows(grid) }}
+        </tbody>
         </table>
         </div>
         <div class="grid_footer">
@@ -28,8 +31,8 @@
         {% if grid.exports|length > 0 %}
             {{ grid_exports(grid) }}
         {% endif %}
+        
         </div>
-        {{ grid_scripts(grid) }}
     </form>
 {% else %}
     {{ grid_no_data(grid) }}
@@ -68,9 +71,9 @@
                 {% if (column.sortable) %}
                     <a class="order" href="{{ grid_url('order', grid, column) }}" title="{{ 'Order by'|trans }} {{ columnTitle|trans }}">{{ columnTitle|trans }}</a>
                     {% if column.order == 'asc' %}
-                        <div class="sort_up"></div>
+                        <i class="icon-caret-up"></i>
                     {% elseif column.order == 'desc' %}
-                        <div class="sort_down"></div>
+                         <i class="icon-caret-down"></i>
                     {% endif %}
                 {% else %}
                     {{ columnTitle|trans }}
@@ -126,11 +129,7 @@
 {% endblock grid_rows %}
 {# ---------------------------------------------------- grid_pager -------------------------------------------------- #}
 {% block grid_pager %}
-<div class="pager" style="float:left">
-    {{ grid_pager_totalcount(grid) }}
-    {{ grid_pager_selectpage(grid) }}
-    {{ grid_pager_results_perpage(grid) }}
-</div>
+{{ grid_pagerfanta(grid) }}
 {% endblock grid_pager %}
 {# ---------------------------------------------------- grid_pager_totalcount -------------------------------------------------- #}
 {% block grid_pager_totalcount %}
@@ -231,8 +230,9 @@
 {# -------------------------------------------- grid_column_operator --------------------------------------- #}
 {% block grid_column_operator %}
 {% if column.operatorsVisible %}
+{% if column.size > 0 %}{% set sty = 'style="width: ' ~ (column.size - 10 ) ~ 'px;"' %}{% else %}{% set sty = '' %}{% endif %}
 <span class="grid-filter-operator">
-    <select name="{{ grid.hash }}[{{ column.id }}][operator]" onchange="{{ grid.hash }}_switchOperator(this, '{{ grid.hash }}__{{ column.id }}__query__');">
+    <select name="{{ grid.hash }}[{{ column.id }}][operator]" onchange="{{ grid.hash }}_switchOperator(this, '{{ grid.hash }}__{{ column.id }}__query__');"{{ sty|raw }}>
     {% for operator in column.operators %}
         <option value="{{ operator }}"{% if op == operator %} selected="selected"{% endif %}>{{ operator |trans }}</option>
     {% endfor %}
@@ -252,8 +252,19 @@
 <span class="grid-filter-input">
     {{ block('grid_column_operator')}}
     <span class="grid-filter-input-query">
-        <input type="{{ column.inputType }}" value="{{ from }}" class="grid-filter-input-query-from" name="{{ grid.hash }}[{{ column.id }}][from]" id="{{ grid.hash }}__{{ column.id }}__query__from" {% if submitOnChange is sameas(true) %}onkeypress="return {{ grid.hash }}_submitForm(event, this.form);"{% endif%} {{ ( op == isNullOperator or op == isNotNullOperator ) ? 'style="display: none;" disabled="disabled"' : '' }} />
-        <input type="{{ column.inputType }}" value="{{ to }}" class="grid-filter-input-query-to" name="{{ grid.hash }}[{{ column.id }}][to]" id="{{ grid.hash }}__{{ column.id }}__query__to" {% if submitOnChange is sameas(true) %}onkeypress="return {{ grid.hash }}_submitForm(event, this.form);"{% endif%} {{ ( op == btwOperator or op == btweOperator ) ? '': 'style="display: none;" disabled="disabled"' }} />
+        {% if column.size > 0 %}{% set sty = (column.size - 10) ~ 'px;' %}{% else %}{% set sty = 'auto;' %}{% endif %}
+        <input type="{{ column.inputType }}" value="{{ from }}" 
+            class="grid-filter-input-query-from" 
+            name="{{ grid.hash }}[{{ column.id }}][from]" 
+            id="{{ grid.hash }}__{{ column.id }}__query__from"
+            {% if submitOnChange is sameas(true) %}onkeypress="return {{ grid.hash }}_submitForm(event, this.form);"{% endif%}
+            {% if ( op == isNullOperator or op == isNotNullOperator ) %} style="display: none; width:{{ sty|raw }}" disabled="disabled"{% else %} style="width:{{ sty|raw  }}"{% endif %} />
+        <input type="{{ column.inputType }}" value="{{ to }}" 
+            class="grid-filter-input-query-to" 
+            name="{{ grid.hash }}[{{ column.id }}][to]" 
+            id="{{ grid.hash }}__{{ column.id }}__query__to" 
+            {% if submitOnChange is sameas(true) %}onkeypress="return {{ grid.hash }}_submitForm(event, this.form);"{% endif%}
+            {% if (op == btwOperator or op == btweOperator ) %} style="width:{{ sty|raw }}"{% else %}style="display: none; width:{{ sty|raw }}" disabled="disabled"{% endif %}/>
     </span>
 </span>
 {% endblock grid_column_filter_type_input %}
@@ -267,17 +278,20 @@
 {% set from = column.data.from is defined ? column.data.from : null %}
 {% set to = column.data.to is defined ? column.data.to : null %}
 {% set multiple = column.selectMulti %}
+  {% if column.size > 0 %}{% set sty = (column.size - 10) ~ 'px;' %}{% else %}{% set sty = 'auto;' %}{% endif %}
 <span class="grid-filter-select">
     {{ block('grid_column_operator')}}
     <span class="grid-filter-select-query">
-        <select{% if multiple %} multiple="multiple"{% endif %} name="{{ grid.hash }}[{{ column.id }}][from][]" class="grid-filter-select-query-from" id="{{ grid.hash }}__{{ column.id }}__query__from" {% if submitOnChange is sameas(true) %}onchange="return {{ grid.hash }}_submitForm(event, this.form);"{% endif%} {{ ( op == isNullOperator or op == isNotNullOperator ) ? 'style="display: none;" disabled="disabled"' : '' }}>
+        <select{% if multiple %} multiple="multiple"{% endif %} name="{{ grid.hash }}[{{ column.id }}][from][]" class="grid-filter-select-query-from" id="{{ grid.hash }}__{{ column.id }}__query__from" {% if submitOnChange is sameas(true) %}onchange="return {{ grid.hash }}_submitForm(event, this.form);"{% endif%}
+        {% if ( op == isNullOperator or op == isNotNullOperator ) %} style="display: none; width:{{ sty|raw }}" disabled="disabled"{% else %} style="width:{{ sty|raw  }}"{% endif %}>
             <option value="">&nbsp;</option>
             {% for key, value in column.values %}
                 <option value="{{ key }}"{% if key in from %} selected="selected"{% endif %}>{{ value }}</option>
             {% endfor %}
         </select>
         {% if multiple %}<input type="submit" value="{{ 'Go'|trans }}" />{% endif %}
-        <select name="{{ grid.hash }}[{{ column.id }}][to]" class="grid-filter-select-query-to" id="{{ grid.hash }}__{{ column.id }}__query__to" {% if submitOnChange is sameas(true) %}onchange="return {{ grid.hash }}_submitForm(event, this.form);"{% endif%} {{ ( op == btwOperator or op == btweOperator ) ? '': 'style="display: none;" disabled="disabled"' }}>
+        <select name="{{ grid.hash }}[{{ column.id }}][to]" class="grid-filter-select-query-to" id="{{ grid.hash }}__{{ column.id }}__query__to" {% if submitOnChange is sameas(true) %}onchange="return {{ grid.hash }}_submitForm(event, this.form);"{% endif%} 
+        {% if (op == btwOperator or op == btweOperator ) %} style="width:{{ sty|raw }}"{% else %}style="display: none; width:{{ sty|raw }}" disabled="disabled"{% endif %}>
             <option value="">&nbsp;</option>
             {% for key, value in column.values %}
                 <option value="{{ key }}"{% if not to is null and to == key %} selected="selected"{% endif %}>{{ value }}</option>

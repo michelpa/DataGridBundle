@@ -3,18 +3,22 @@
 {% block grid_scripts_goto %}
 function {{ grid.hash }}_goto(url, data, type)
 {
+
+    $('#table_{{ grid.hash }}').fadeTo("slow", 0.5);
     type = type || 'GET';
     data = data || [];
 
     $.ajax({
         url: url,
         data: data,
-        type: type
+        type: type,
+        dataType: 'json',
     }).done(function( msg ) {
-        $('#{{ grid.hash }}').parent().replaceWith(msg);
+        refreshTable('{{ grid.hash }}', msg);
+        $('#table_{{ grid.hash }}').fadeTo("slow", 1);
     });
-
-    return false
+  
+    return false;
 }
 {% endblock grid_scripts_goto %}
 
@@ -39,9 +43,23 @@ function {{ grid.hash }}_submitForm(event, form, force)
 {% block grid_scripts_ajax %}
 $(function () {
     // Order and pagerfanta links
-    $('a.order, nav a', '#{{ grid.hash }}').click(function () {
+    $('a.order, nav a, .pagination a', '#{{ grid.hash }}').click(function () {
+        $('thead').find('.icon-caret-up').remove();
+        $('thead').find('.icon-caret-down').remove();
+        
+        var tmp = this.href;
+        var pos = tmp.lastIndexOf('|')
+        var ord = tmp.substr(pos+1);
+        if (ord == 'asc'){
+            tmp = tmp.substr(0, pos) + '|desc';
+            $(this).after('<i class="icon-caret-up"></i>');
+        } else if (ord == 'desc') {
+            tmp = tmp.substr(0, pos) + '|asc';
+            $(this).after('<i class="icon-caret-down"></i>');
+        }
+        
         {{ grid.hash }}_goto(this.href);
-
+        $(this).attr('href', tmp);
         return false;
     });
 
@@ -69,3 +87,29 @@ $(function () {
     });
 });
 {% endblock grid_scripts_ajax %}
+
+{% block refresh_js %}
+<script type="text/javascript">
+
+function refreshTable(hash, data) {
+	var r = new Array(), j = -1;
+	$.each(data.rows, function(key, row) {
+		r[++j] ='<tr>';
+		$.each(row , function(key, value) {
+			r[++j] = '<td>',
+		    r[++j] = value;
+		});
+		r[++j] = '</tr>';
+	});
+    $('#table_'+hash+ ' tbody')[0].innerHTML = r.join(''); 
+    $('#'+hash + ' .pagination').replaceWith(data.pager);
+
+    $('.pagination a', '#'+hash).click(function () {
+        eval(hash+'_goto(\''+this.href+'\')');
+        return false;
+    });
+
+    
+};
+</script>
+{% endblock refresh_js %}

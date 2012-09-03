@@ -16,6 +16,7 @@ use APY\DataGridBundle\Grid\Grid;
 use Pagerfanta\Pagerfanta;
 use Pagerfanta\Adapter\NullAdapter;
 use Pagerfanta\View\DefaultView;
+use Pagerfanta\View\TwitterBootstrapView;
 
 class DataGridExtension extends \Twig_Extension
 {
@@ -51,9 +52,19 @@ class DataGridExtension extends \Twig_Extension
      */
     protected $params = array();
 
+    /**
+     * @var string
+     */
+    protected $pagerFantaView = '';
+
     public function __construct($router)
     {
         $this->router = $router;
+    }
+
+    public function setPagerFantaView($view){
+        $this->pagerFantaView = $view;
+        
     }
 
     public function initRuntime(\Twig_Environment $environment)
@@ -98,6 +109,8 @@ class DataGridExtension extends \Twig_Extension
             'grid_cell'         => new \Twig_Function_Method($this, 'getGridCell', array('is_safe' => array('html'))),
             'grid_search'       => new \Twig_Function_Method($this, 'getGridSearch', array('is_safe' => array('html'))),
             'grid_pagerfanta'   => new \Twig_Function_Method($this, 'getPagerfanta', array('is_safe' => array('html'))),
+            'grid_json' => new \Twig_Function_Method($this, 'getGridJson', array('is_safe' => array('html'))),
+            'grid_js_refresh' => new \Twig_Function_Method($this, 'getJsRefresh', array('is_safe' => array('html'))),
             // Other methods with only the grid as input and output argument (Twig >= 1.5.0)
             'grid_*'            => new \Twig_Function_Method($this, 'getGrid_', array('is_safe' => array('html')))
         );
@@ -236,10 +249,39 @@ class DataGridExtension extends \Twig_Extension
             return sprintf('%s%d', $url, $page - 1);
         };
 
-        $view = new DefaultView();
-        $html = $view->render($pagerfanta, $routeGenerator);
+    	if ($this->pagerFantaView == 'default') {        
+    	    $view = new DefaultView();
+    	    $html = $view->render($pagerfanta, $routeGenerator);
+    	} else {
+    	    $view = new TwitterBootstrapView();
+    	    $html = $view->render($pagerfanta, $routeGenerator, array('prev_message' => '«', 'next_message' => '»'));
+    	}	
 
         return $html;
+    }
+
+    public function getGridJson($grid, $theme = null)
+    {
+        $this->initGrid($grid, $theme);
+
+        $this->theme = $theme;
+        $grid->setTemplate($theme);
+        $rows = array();
+        foreach ($grid->getRows() as $i => $row) {
+            foreach ($grid->getColumns() as $column) {
+                if ($column->isVisible(true)) {
+                    $value = $column->renderCell($row->getField($column->getId()), $row, $this->router);
+                    $rows[$i][$column->getId()] = $value;
+                }
+            }
+        }
+        
+        $data['rows'] = $rows;
+        return $this->renderBlock('grid_rows_json', array('grid' => $grid, 'data' => json_encode($data)));
+    }
+
+    public function getJsRefresh() {
+        return $this->renderBlock('refresh_js',array());
     }
 
     /**
