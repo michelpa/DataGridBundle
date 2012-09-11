@@ -9,7 +9,7 @@
         {% endif %}
         </div>
         <div class="grid_body">
-        <table>
+        <table  {% if options.table_class %}class="{{ options.table_class }}" {% endif %}>
         {% if grid.isTitleSectionVisible %}
             {{ grid_titles(grid) }}
         {% endif %}
@@ -68,9 +68,9 @@
                 {% if (column.sortable) %}
                     <a class="order" href="{{ grid_url('order', grid, column) }}" title="{{ 'Order by'|trans }} {{ columnTitle|trans }}">{{ columnTitle|trans }}</a>
                     {% if column.order == 'asc' %}
-                        <div class="sort_up"></div>
+                        {{ options.title_sort_up|raw }}
                     {% elseif column.order == 'desc' %}
-                        <div class="sort_down"></div>
+                        {{ options.title_sort_down|raw }}
                     {% endif %}
                 {% else %}
                     {{ columnTitle|trans }}
